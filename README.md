@@ -1,10 +1,10 @@
 # AlphaGo Explained and Beyond
 
-A structured walkthrough of DeepMind's AlphaGo family of systems — from the original AlphaGo to MuZero Reanalyse — explaining how each generation learns, what problem it solves, and how it differs from its predecessor. Closes with a chronological history of DeepMind from founding to 2025.
+A structured walkthrough of DeepMind's AlphaGo family of systems — from the original AlphaGo to MuZero Reanalyse — explaining how each generation learns, what problem it solves, and how it differs from its predecessor. Closes with a chronological history of DeepMind from founding to 2025, and a foundational explainer on how neural networks work.
 
 ## Contents
 
-The main document [`alphago_evolution.md`](alphago_evolution.md) is structured in two parts.
+The main document [`alphago_evolution.md`](alphago_evolution.md) is structured in three parts.
 
 ### Part 1: The AlphaGo Family
 
@@ -32,6 +32,20 @@ A chronological overview of DeepMind from its founding in 2010 to 2025, covering
 | 2022–2023 | Gato; Chinchilla scaling laws; merger with Google Brain |
 | 2024 | Nobel Prize in Chemistry for AlphaFold2; SIMA agent |
 | 2025 | Gemini 2.5; IMO gold medal; Gemini Robotics; AlphaEvolve; Weather Lab |
+
+### Part 3: How a Neural Network Works
+
+A self-contained explainer covering the foundational concepts underlying every system in the document:
+
+| Concept | What It Covers |
+|---|---|
+| **Neurons and layers** | Weighted sums, activation functions, and the role of network depth |
+| **Forward pass** | How inputs flow through layers to produce an output |
+| **Backpropagation** | Using the chain rule to compute how each weight contributed to the error |
+| **Gradient descent** | Iteratively adjusting weights to reduce loss |
+| **CNNs** | Why convolutional filters suit spatial inputs like Go boards and Atari screens |
+| **ResNets** | Skip connections, vanishing gradients, and how depth became practical |
+| **Connection to AlphaGo** | Maps every network component (policy, value, dynamics, representation, encoder/prior) back to these concepts |
 
 ## Themes
 
