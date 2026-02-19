@@ -389,3 +389,97 @@ MuZero Reanalyse  — learned rules, stochastic-capable, sample-efficient traini
 ```
 
 Each step removes another human-provided assumption or computational bottleneck. The progression is a systematic answer to: *how much can an agent learn about the world purely from experience, and how efficiently can it do so?*
+
+---
+
+## Appendix: A Brief History of DeepMind
+
+### Founding (2010)
+
+DeepMind was founded in London in **November 2010** by three co-founders:
+
+- **Demis Hassabis** — neuroscientist, chess prodigy, and game developer; provided the scientific vision
+- **Shane Legg** — machine learning researcher focused on general intelligence and AI safety
+- **Mustafa Suleyman** — entrepreneur responsible for operations and applied AI (later left to co-found Inflection AI)
+
+The stated mission from the outset was to "solve intelligence, and then use that to solve everything else" — an unusually explicit commitment to artificial general intelligence as an end goal, not just a research direction.
+
+### Early Work and Google Acquisition (2013–2014)
+
+DeepMind's early research focused on reinforcement learning applied to classic Atari games. In **2013** they published results showing a single neural network learning to play multiple Atari titles from raw pixels at or above human level — a striking demonstration that general-purpose learning algorithms could master diverse tasks without task-specific engineering.
+
+In **January 2014**, Google acquired DeepMind for a reported **£400–500 million** (~$650M), making it one of the largest AI acquisitions at the time. DeepMind retained operational independence and remained headquartered in London.
+
+### Deep Q-Networks and Nature Paper (2015)
+
+The **Deep Q-Network (DQN)** paper, published in *Nature* in February 2015, formalised the Atari results and introduced the techniques (experience replay, target networks) that made deep reinforcement learning stable. It became one of the most cited papers in the field and established DeepMind as a leading research lab alongside OpenAI and academic groups.
+
+### AlphaGo and the Go Milestone (2016)
+
+In **March 2016**, AlphaGo defeated world champion Lee Sedol 4–1 in a live match watched by an estimated 200 million people. Go had been considered AI-complete — too complex for computers to master for decades. The match is widely regarded as a turning point in public perception of AI capability.
+
+### AlphaGo Zero and AlphaZero (2017)
+
+**AlphaGo Zero** (October 2017) demonstrated that the system could surpass human play with no human data whatsoever — only the rules of Go and self-play. It defeated the original AlphaGo 100–0.
+
+**AlphaZero** (December 2017) generalised this to Chess and Shogi, mastering both from scratch in hours and defeating the best domain-specific engines. Chess in particular shocked the community — decades of hand-crafted engine development undone in a single training run.
+
+### AlphaFold and Protein Folding (2018–2021)
+
+DeepMind entered structural biology with **AlphaFold**, which won the CASP13 protein structure prediction competition in **2018**.
+
+**AlphaFold2** won CASP14 in **2020** by a historic margin — achieving accuracy comparable to experimental techniques for most protein targets, effectively solving a 50-year grand challenge in biology.
+
+In **2021**, DeepMind released a publicly accessible database of predicted structures for virtually the entire human proteome and later expanded to over **200 million proteins** across nearly all known organisms — one of the most significant scientific contributions of the decade.
+
+### MuZero and the Planning Era (2019–2021)
+
+**MuZero** (2019) extended AlphaZero's approach to environments without known rules, learning its own world model. **Stochastic MuZero** and **MuZero Reanalyse** (both 2021) added stochastic environment handling and dramatically improved sample efficiency — making the approach practical beyond game-playing into slower, more expensive simulators.
+
+### Expanding Scope: Gato, Science, and Robotics (2022–2023)
+
+**Gato** (May 2022) was a single transformer model trained across 604 tasks — text, images, games, robot control — demonstrating that a single architecture and training regime could handle radically diverse domains.
+
+**Chinchilla** (2022) established new scaling laws for large language models, showing that most models of the era were undertrained relative to their compute budget. This reshaped how the entire field approached LLM training.
+
+**RoboCat** (2023) showed a self-improving robotic agent that could adapt to new robot arms and new tasks from a small number of demonstrations.
+
+### Merger with Google Brain → Google DeepMind (2023)
+
+In **April 2023**, Google merged DeepMind with **Google Brain** — its other premier AI research division — to form **Google DeepMind**. Demis Hassabis became CEO of the combined entity. The merger consolidated Google's AI research under a single organisation, positioning it to compete more directly with OpenAI and Anthropic.
+
+In **June 2023**, **AlphaDev** discovered a new sorting algorithm — embedded in the output of a reinforcement learning agent — that is **70% faster** for short sequences. It was incorporated directly into the LLVM compiler, making it one of the first times AI-discovered algorithms entered production computing infrastructure.
+
+### Nobel Prize and Scientific AI (2024)
+
+In **October 2024**, **Demis Hassabis** and **John Jumper** were awarded the **Nobel Prize in Chemistry** for AlphaFold2's contribution to protein structure prediction — the first Nobel Prize awarded to work primarily driven by AI methods. David Baker shared the prize for separate work on computational protein design.
+
+**SIMA** (2024) introduced a general AI agent capable of following natural language instructions across diverse 3D environments and video games, without game-specific training — a step toward instruction-following agents that generalise across embodied tasks.
+
+### Gemini, Robotics, and Weather (2025)
+
+**Gemini 2.5** (March 2025) marked a major capability leap in Google DeepMind's large language model family, with strong performance across reasoning, coding, and multimodal tasks.
+
+**Gemini Robotics** (March 2025) brought the Gemini model family into physical embodiment, enabling robots to interact with the real world through language-conditioned manipulation.
+
+In **July 2025**, an advanced version of Gemini with extended thinking achieved **gold-medal standard at the International Mathematical Olympiad** — matching the best human competitors on problems requiring creative, multi-step mathematical reasoning.
+
+**Weather Lab** (mid-2025) applied stochastic neural networks trained on 45 years of global weather data to probabilistic forecasting, outperforming traditional physics-based models during the 2025 Atlantic hurricane season.
+
+**AlphaEvolve** (May 2025) used large language models to design and evolve algorithms autonomously — discovering improvements to sorting, matrix multiplication, and other fundamental computational problems.
+
+---
+
+### DeepMind's Arc in One View
+
+| Period | Focus | Landmark |
+|---|---|---|
+| 2010–2013 | Founding, early RL | Atari games from pixels |
+| 2014–2015 | Google acquisition, DQN | Nature DQN paper |
+| 2016–2017 | Board games | AlphaGo beats Lee Sedol; AlphaZero |
+| 2018–2021 | Biology, planning | AlphaFold2; MuZero |
+| 2022–2023 | Generalist models, science | Gato; Chinchilla; Google Brain merger |
+| 2024 | Recognition, embodiment | Nobel Prize; SIMA |
+| 2025 | LLMs, robotics, science tools | Gemini 2.5; IMO gold; AlphaEvolve |
+
+DeepMind's trajectory is the story of a lab that began with a single conviction — that intelligence is a general phenomenon that can be studied and engineered — and pursued it from Atari to the Nobel Prize, from Go boards to protein databases, from learned world models to physical robots.
