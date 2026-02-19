@@ -1,4 +1,4 @@
-# The Evolution of AlphaGo: From Human Games to Stochastic Planning
+# The Evolution of AlphaGo: From Human Games to Efficient Planning
 
 ---
 
@@ -288,6 +288,95 @@ Values at decision nodes are computed as expectations over chance node outcomes,
 
 ---
 
+## 6. MuZero Reanalyse: Improving Training Efficiency
+
+### The Problem It Solves
+
+Standard MuZero training has a fundamental staleness problem.
+
+The training pipeline works like this:
+
+```
+Actor (self-play with MCTS) → Replay Buffer → Learner (network updates)
+```
+
+Trajectories sit in the replay buffer and are sampled repeatedly for training. But the **MCTS policy and value targets stored in the buffer were computed by an older version of the network**. As the network improves, those old targets become increasingly inaccurate guides — yet they're still being used for training.
+
+This is the off-policy target problem: the data is from the right environment, but the labels are stale.
+
+### The Core Idea
+
+Reanalyse decouples two things that standard training conflates:
+
+| Thing | Standard MuZero | Reanalyse |
+|---|---|---|
+| **Trajectory** (observations + actions) | Generated fresh by self-play | Reused from replay buffer |
+| **MCTS targets** (policy + value) | Stored at collection time | **Recomputed with current network** |
+
+Instead of using stored targets, Reanalyse takes an old trajectory and **reruns MCTS on it using the latest network parameters**, producing fresh targets. The network is trained on old trajectories with new labels.
+
+### How It Works Step by Step
+
+```
+1. Sample an old trajectory from replay buffer:
+        (o₀, a₀, r₀), (o₁, a₁, r₁), ..., (oₙ, aₙ, rₙ)
+
+2. For each position oₜ in the trajectory:
+        hθ(oₜ) → sₜ           (encode with current network)
+        MCTS(sₜ, current θ) → fresh πₜ, vₜ
+
+3. Train current network on:
+        - Old rewards rₜ      (ground truth, unchanged)
+        - Fresh policy πₜ     (from current MCTS)
+        - Fresh value vₜ      (from current MCTS)
+```
+
+Step 2 requires **no environment interaction** — it runs entirely in the learned latent space. This makes reanalysis cheap compared to generating new self-play games.
+
+### The Training Architecture
+
+```
+┌─────────────────┐   trajectories    ┌────────────────┐
+│   Actor         │ ────────────────► │  Replay Buffer │
+│  (self-play)    │                   │                │
+└─────────────────┘                   └───────┬────────┘
+                                              │ sample old trajectories
+┌─────────────────┐   fresh targets   ┌───────▼────────┐
+│   Reanalyser    │ ────────────────► │    Learner     │
+│ (MCTS in latent)│                   │ (network update)│
+└─────────────────┘                   └────────────────┘
+```
+
+The ratio of reanalysed to fresh data is a hyperparameter. A high reanalyse ratio — most training from reanalysed data — significantly improves sample efficiency.
+
+### Why This Improves Efficiency
+
+**Fresh Targets Without Fresh Trajectories** — generating a new self-play game requires many environment steps and wall-clock time proportional to game length. Reanalysing an existing trajectory requires only MCTS in latent space — no environment interaction needed.
+
+**Effectively On-Policy Labels from Off-Policy Data** — trajectory data remains off-policy (collected under old parameters), but targets are always current. This reduces the bias from stale value estimates, a major source of training instability.
+
+**Higher Data Utilisation** — old trajectories that would otherwise contribute diminishing returns can be refreshed and made useful again. The replay buffer becomes a persistent, reusable asset rather than a decaying one.
+
+### Measured Impact
+
+- Achieves comparable performance with **~10× fewer environment interactions** on some Atari games
+- Particularly impactful in **data-limited regimes** — when generating unlimited self-play data isn't feasible
+- Improves training stability by reducing target variance
+- Makes MuZero practical for domains where environment interaction is expensive (robotics, slow simulators)
+
+**EfficientZero (2021)** built directly on Reanalyse, adding self-supervised consistency losses and data augmentation on top — achieving human-level Atari performance with only **2 hours of game experience**, roughly 500× more sample efficient than the original MuZero.
+
+### The Conceptual Point
+
+Reanalyse separates two costs that are usually bundled together:
+
+> **Exploration cost** — interacting with the environment to collect trajectories
+> **Labelling cost** — computing accurate targets for those trajectories
+
+Standard RL pays both costs together on every sample. Reanalyse pays the exploration cost once and the labelling cost repeatedly — refreshing labels as the network improves, squeezing more value from each trajectory the environment ever generated.
+
+---
+
 ## The Full Conceptual Arc
 
 ```
@@ -296,6 +385,7 @@ AlphaGo Zero      — rules + search, no human knowledge
 AlphaZero         — rules + search, generalized across games
 MuZero            — search only, rules learned from experience
 Stochastic MuZero — learned rules, stochastic transitions, distributional planning
+MuZero Reanalyse  — learned rules, stochastic-capable, sample-efficient training
 ```
 
-Each step removes another human-provided assumption about the environment. The progression is a systematic answer to: *how much can an agent learn about the world purely from experience, and how well can it plan under what remains unknown?*
+Each step removes another human-provided assumption or computational bottleneck. The progression is a systematic answer to: *how much can an agent learn about the world purely from experience, and how efficiently can it do so?*
