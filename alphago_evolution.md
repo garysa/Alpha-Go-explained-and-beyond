@@ -611,3 +611,208 @@ Every component described in this document is a neural network doing one of thes
 | Encoder / Prior (Stochastic MuZero) | ResNet | Input: observations → Output: latent variable distribution |
 
 The sophistication of AlphaGo Zero, MuZero, and their successors lies not in exotic network architectures but in **what the networks are trained to predict**, **how training data is generated** (self-play, reanalysis), and **how planning (MCTS) interacts with learned functions** to produce behaviour far better than the raw network alone.
+
+---
+
+## Appendix: How Transformers and Attention Work
+
+The AlphaGo family was built on convolutional and residual networks. The architecture that succeeded them — and now underpins Gemini, AlphaFold2, and Gato — is the **transformer**. Understanding it completes the picture of how modern deep learning systems are built.
+
+### The Problem Transformers Solve
+
+Before transformers, sequence modelling was dominated by **recurrent neural networks (RNNs)** — networks that process tokens one at a time, carrying information forward through a hidden state. RNNs have two fundamental problems:
+
+- **Sequential processing** — each step depends on the previous, so training cannot be parallelised over sequence length
+- **Long-range forgetting** — information from early in a sequence must survive many state updates to influence later steps; in practice it degrades
+
+Transformers (Vaswani et al., *Attention Is All You Need*, 2017) discard recurrence entirely and replace it with **attention** — a mechanism that allows every position in a sequence to directly interact with every other position in a single operation.
+
+---
+
+### Attention: The Core Idea
+
+#### Intuition
+
+Given a sequence of elements, attention asks: **for each element, which other elements are most relevant, and by how much?**
+
+The answer is computed dynamically from the content of the elements themselves — not from their position or a fixed rule. The same word can attend to different things in different contexts.
+
+#### Queries, Keys, and Values
+
+Each element in the sequence is projected into three vectors:
+
+| Vector | Role | Analogy |
+|---|---|---|
+| **Query** `Q` | What am I looking for? | A search query |
+| **Key** `K` | What do I advertise? | A document's index entry |
+| **Value** `V` | What do I actually contain? | The document's content |
+
+For a sequence of `n` elements, you get matrices `Q`, `K`, `V` each of shape `n × d`.
+
+#### Computing Attention
+
+```
+Attention(Q, K, V) = softmax( QKᵀ / √d ) · V
+```
+
+Step by step:
+
+**1. Score every pair**
+```
+QKᵀ  →  n × n matrix of raw scores
+```
+Each entry `[i, j]` is the dot product of query `i` with key `j` — how relevant element `j` is to element `i`.
+
+**2. Scale**
+```
+divide by √d
+```
+Dot products grow large as dimension `d` increases, pushing softmax into regions with tiny gradients. Dividing by `√d` stabilises training.
+
+**3. Normalise with softmax**
+```
+softmax across each row  →  n × n attention weights (each row sums to 1)
+```
+Each row is now a probability distribution over positions — how much element `i` attends to each other element.
+
+**4. Aggregate values**
+```
+multiply by V  →  n × d output
+```
+Each output is a weighted sum of value vectors. Elements that are highly relevant contribute more.
+
+```
+        Keys (what each position offers)
+        k₁   k₂   k₃   k₄
+       ┌────┬────┬────┬────┐
+  q₁   │0.6 │0.1 │0.2 │0.1│  ← how much position 1 attends to each
+  q₂   │0.1 │0.7 │0.1 │0.1│  ← how much position 2 attends to each
+  q₃   │0.2 │0.2 │0.5 │0.1│
+  q₄   │0.1 │0.1 │0.2 │0.6│
+       └────┴────┴────┴────┘
+  attention weights (after softmax)
+```
+
+---
+
+### Multi-Head Attention
+
+A single attention operation learns one way of relating positions. **Multi-head attention** runs `h` attention operations in parallel, each with its own learned projections:
+
+```
+head_i = Attention(Q·Wᵢᴬ, K·Wᵢᴷ, V·Wᵢᵛ)
+
+MultiHead(Q,K,V) = Concat(head₁, head₂, ..., headₕ) · Wᴼ
+```
+
+Each head can specialise in a different type of relationship — one might track syntactic dependencies, another coreference, another positional proximity. The outputs are concatenated and projected back to the model dimension.
+
+---
+
+### The Full Transformer Block
+
+A transformer is built by stacking **transformer blocks**. Each block contains:
+
+```
+Input x
+  │
+  ▼
+┌─────────────────────────┐
+│   Multi-Head Attention  │  ← each position attends to all others
+└────────────┬────────────┘
+             │
+             + ◄── residual connection (add input x back)
+             │
+         LayerNorm
+             │
+┌─────────────────────────┐
+│  Feed-Forward Network   │  ← applied independently to each position
+│  (two linear layers     │
+│   with ReLU between)    │
+└────────────┬────────────┘
+             │
+             + ◄── residual connection
+             │
+         LayerNorm
+             │
+          Output
+```
+
+**Residual connections** prevent vanishing gradients and allow information to bypass layers cleanly.
+
+**Layer normalisation** stabilises activations across the feature dimension at each position.
+
+**The feed-forward network (FFN)** applies the same two-layer MLP independently to each position. All cross-position mixing happens in attention; the FFN is where most of the model's "knowledge" is thought to be stored. It is typically 4× wider than the model dimension.
+
+---
+
+### Positional Encoding
+
+Attention is **permutation-invariant** — shuffling the input sequence would shuffle the output identically. The model has no inherent sense of order.
+
+To inject position information, a **positional encoding** is added to each token embedding before the first layer:
+
+```
+input to transformer = token embedding + positional encoding
+```
+
+The original paper used fixed sinusoidal functions of different frequencies. Modern models typically use learned embeddings or **rotary position embeddings (RoPE)**, which encode relative position directly into the attention computation.
+
+---
+
+### Masking
+
+**Padding mask** — prevents attending to padding tokens in variable-length batches.
+
+**Causal mask** (decoder-only models) — prevents position `i` from attending to positions `j > i`, enforcing left-to-right generation:
+
+```
+     1  2  3  4
+1  [ ✓  ✗  ✗  ✗ ]
+2  [ ✓  ✓  ✗  ✗ ]
+3  [ ✓  ✓  ✓  ✗ ]
+4  [ ✓  ✓  ✓  ✓ ]
+```
+
+---
+
+### Encoder, Decoder, and Encoder-Decoder
+
+| Architecture | Attention Type | Used For | Examples |
+|---|---|---|---|
+| **Encoder-only** | Bidirectional (all positions see all) | Classification, embeddings | BERT, RoBERTa |
+| **Decoder-only** | Causal (past only) | Text generation | GPT, Gemini, Claude |
+| **Encoder-decoder** | Encoder: bidirectional; Decoder: causal + cross-attention to encoder | Translation, summarisation | T5, original Transformer |
+
+**Cross-attention** (encoder-decoder) is identical to self-attention except Q comes from the decoder and K, V come from the encoder — the decoder attends to the full encoded input at every step.
+
+---
+
+### Why Transformers Dominate
+
+| Property | Benefit |
+|---|---|
+| **Full parallel computation** | Every position processed simultaneously — training is orders of magnitude faster than RNNs |
+| **Direct long-range connections** | Position 1 and position 10,000 interact in a single step with equal cost |
+| **Uniform architecture** | The same block stacked repeatedly — scales cleanly with depth and width |
+| **Expressivity** | Multi-head attention can represent virtually any pattern of inter-token relationships |
+| **Predictable scaling** | Performance improves reliably with more parameters and more data |
+
+---
+
+### Computational Cost
+
+The `QKᵀ` matrix is **O(n²)** in sequence length — for 100,000 tokens, that is 10 billion pairs. This has motivated a large body of research into efficient variants: Sparse Attention, Linear Attention, Flash Attention, and State Space Models (e.g. Mamba) that reduce this cost while preserving most capability.
+
+---
+
+### Connection to the AlphaGo Family and DeepMind
+
+| System | Architecture | Role of Attention |
+|---|---|---|
+| AlphaGo / AlphaZero / MuZero | CNN + ResNet | None — predates transformer dominance |
+| **AlphaFold2** | Evoformer (attention-based) | Attention over sequence and structure simultaneously |
+| **Gato** | Transformer | Unified sequence model across text, images, and robot actions |
+| **Gemini** | Transformer | DeepMind's large language model family |
+
+The transformer is the architecture that made the jump from narrow game-playing AI to general-purpose intelligence practical at scale. The planning systems in this document solved *how to search and learn from self-play*; transformers solved *how to represent and reason over arbitrary structured information* — and the two directions are beginning to converge.
