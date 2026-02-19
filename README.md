@@ -1,10 +1,10 @@
 # AlphaGo Explained and Beyond
 
-A structured walkthrough of DeepMind's AlphaGo family of systems — from the original AlphaGo to MuZero Reanalyse — explaining how each generation learns, what problem it solves, and how it differs from its predecessor. Closes with a chronological history of DeepMind from founding to 2025, and a foundational explainer on how neural networks work.
+A structured walkthrough of DeepMind's AlphaGo family of systems — from the original AlphaGo to MuZero Reanalyse — explaining how each generation learns, what problem it solves, and how it differs from its predecessor. Closes with a chronological history of DeepMind from founding to 2025, and foundational explainers on neural networks and transformer architecture.
 
 ## Contents
 
-The main document [`alphago_evolution.md`](alphago_evolution.md) is structured in three parts.
+The main document [`alphago_evolution.md`](alphago_evolution.md) is structured in four parts.
 
 ### Part 1: The AlphaGo Family
 
@@ -47,6 +47,23 @@ A self-contained explainer covering the foundational concepts underlying every s
 | **ResNets** | Skip connections, vanishing gradients, and how depth became practical |
 | **Connection to AlphaGo** | Maps every network component (policy, value, dynamics, representation, encoder/prior) back to these concepts |
 
+### Part 4: How Transformers and Attention Work
+
+A self-contained explainer on the architecture that succeeded CNNs and ResNets, and now underlies Gemini, AlphaFold2, and Gato:
+
+| Concept | What It Covers |
+|---|---|
+| **The problem with RNNs** | Sequential processing and long-range forgetting as motivations for attention |
+| **Queries, Keys, and Values** | How QKV projections enable content-based relevance scoring |
+| **Attention computation** | The full `softmax(QKᵀ/√d)·V` formula with a worked visual example |
+| **Multi-head attention** | Parallel attention heads specialising in different relationship types |
+| **Transformer block** | Attention + feed-forward network + residual connections + LayerNorm |
+| **Positional encoding** | Sinusoidal, learned, and RoPE approaches to injecting order |
+| **Masking** | Padding masks and causal masks for autoregressive generation |
+| **Encoder / Decoder variants** | When each architecture is used and what cross-attention does |
+| **Scaling and cost** | Why O(n²) attention is a bottleneck and what efficient variants address it |
+| **Connection to DeepMind** | Maps AlphaFold2 (Evoformer), Gato, and Gemini back to the transformer |
+
 ## Themes
 
 - How self-play and MCTS combine as a general learning engine
@@ -54,6 +71,7 @@ A self-contained explainer covering the foundational concepts underlying every s
 - How planning under uncertainty evolves from deterministic to stochastic models
 - The separation of exploration cost from labelling cost to improve data efficiency
 - DeepMind's broader mission: from board games to Nobel Prizes and physical robots
+- How CNN/ResNet-based planning systems and transformer-based general models are beginning to converge
 
 ## Audience
 
