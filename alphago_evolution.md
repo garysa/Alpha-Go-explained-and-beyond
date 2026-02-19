@@ -483,3 +483,131 @@ In **July 2025**, an advanced version of Gemini with extended thinking achieved 
 | 2025 | LLMs, robotics, science tools | Gemini 2.5; IMO gold; AlphaEvolve |
 
 DeepMind's trajectory is the story of a lab that began with a single conviction — that intelligence is a general phenomenon that can be studied and engineered — and pursued it from Atari to the Nobel Prize, from Go boards to protein databases, from learned world models to physical robots.
+
+---
+
+## Appendix: How a Neural Network Works
+
+Every system described in this document — policy networks, value networks, dynamics models, representation functions — is built from neural networks. Understanding what a neural network actually is clarifies why these systems can learn at all.
+
+### The Basic Idea
+
+A neural network is a mathematical function that maps inputs to outputs. What makes it powerful is that it is **parameterised** — it has millions of adjustable numbers (called weights) — and **learnable** — those weights can be tuned by exposure to data until the function produces the right outputs for given inputs.
+
+The name comes from a loose analogy to biological neurons, though modern neural networks are better understood as highly flexible function approximators than as brain simulations.
+
+### Neurons and Layers
+
+The building block is the **neuron** (or node). A single neuron does three things:
+
+```
+1. Receives several numerical inputs:  x₁, x₂, x₃, ...
+2. Computes a weighted sum:            z = w₁x₁ + w₂x₂ + w₃x₃ + ... + b
+3. Applies a nonlinear function:       output = f(z)
+```
+
+The weights `w` and bias `b` are the learnable parameters. The nonlinear function `f` is called an **activation function** — common choices are ReLU (`max(0, z)`) or tanh. Without nonlinearity, stacking many neurons would still only produce a linear function, severely limiting what could be learned.
+
+Neurons are arranged in **layers**:
+
+```
+Input layer → Hidden layer(s) → Output layer
+
+[x₁]          [h₁]               [y₁]
+[x₂]    →     [h₂]      →        [y₂]
+[x₃]          [h₃]
+              [h₄]
+```
+
+Each neuron in a layer receives inputs from every neuron in the previous layer (in a fully connected network). The hidden layers transform the input into increasingly abstract representations. The output layer produces the final answer — a probability distribution over moves, a value estimate, a predicted reward, etc.
+
+### Forward Pass
+
+Running an input through the network — computing the output — is called a **forward pass**. It is just arithmetic: multiply, add, apply activation function, repeat for each layer. This is fast and can be parallelised efficiently on GPUs.
+
+### Learning: Backpropagation and Gradient Descent
+
+The network learns by adjusting its weights to reduce error on training data. This requires two steps:
+
+**1. Measure the error**
+
+A **loss function** compares the network's output to the correct answer and returns a single number representing how wrong the prediction was. For example:
+- Cross-entropy loss for predicted probability distributions (policy head)
+- Mean squared error for predicted values (value head)
+
+**2. Compute gradients and update weights**
+
+**Backpropagation** uses the chain rule of calculus to compute, for every weight in the network, how much that weight contributed to the error. This produces a **gradient** — a direction in weight-space that increases the error.
+
+**Gradient descent** then moves the weights in the *opposite* direction — slightly reducing the error:
+
+```
+w ← w − α · ∂Loss/∂w
+```
+
+Where `α` (the learning rate) controls the step size. Repeat over many batches of training data and the weights converge toward values that produce accurate outputs.
+
+In practice, **stochastic gradient descent (SGD)** or its variants (Adam, RMSProp) update weights using small random batches rather than the full dataset, which is faster and often generalises better.
+
+### Deep Networks and Depth
+
+A **deep** neural network simply has many hidden layers — typically dozens to hundreds in modern systems. Depth allows the network to learn **hierarchical representations**:
+
+- Early layers detect low-level patterns (edges, local stone configurations)
+- Middle layers detect higher-level structures (groups, threats, spatial relationships)
+- Later layers detect abstract strategic concepts (influence, territory, initiative)
+
+This hierarchy emerges from training — it is not programmed in. The network discovers that representing the world in layers of increasing abstraction is useful for making accurate predictions.
+
+### Convolutional Neural Networks (CNNs)
+
+For spatial inputs like a Go board or Atari screen, fully connected layers are inefficient — every pixel connected to every neuron ignores spatial structure. **Convolutional layers** instead apply a small learned filter across the entire input:
+
+```
+Filter (3×3):        Applied across board:
+┌───┬───┬───┐        detects the same pattern
+│ w │ w │ w │   →   wherever it appears
+│ w │ w │ w │        (translation equivariance)
+│ w │ w │ w │
+└───┴───┴───┘
+```
+
+This drastically reduces parameters and exploits the fact that the same pattern (a capturing sequence, a ladder) is meaningful wherever it appears on the board. AlphaGo, AlphaZero, and MuZero all use convolutional layers as their primary feature extractors.
+
+### Residual Networks (ResNets)
+
+Very deep networks suffer from the **vanishing gradient problem** — gradients shrink as they are propagated back through many layers, making early layers learn very slowly.
+
+**Residual connections** (skip connections) provide a shortcut:
+
+```
+Input x
+  │
+  ├──────────────────────┐
+  │                      │
+  ▼                      │
+[Layer 1]                │  (identity shortcut)
+[Layer 2]                │
+  │                      │
+  ▼                      │
+  + ◄────────────────────┘
+  │
+Output: F(x) + x
+```
+
+The network learns the *residual* `F(x)` — what to add to the input — rather than a full transformation from scratch. Gradients flow directly through the shortcut, enabling training of networks hundreds of layers deep. AlphaGo Zero and all subsequent DeepMind systems use ResNets.
+
+### How This Connects to AlphaGo
+
+Every component described in this document is a neural network doing one of these jobs:
+
+| Component | Network Type | Task |
+|---|---|---|
+| Policy network | CNN / ResNet | Input: board state → Output: probability over moves |
+| Value network | CNN / ResNet | Input: board state → Output: single win probability |
+| Representation function `h` | CNN / ResNet | Input: raw observations → Output: latent hidden state |
+| Dynamics function `g` | ResNet | Input: hidden state + action → Output: next state + reward |
+| Prediction function `f` | MLP head | Input: hidden state → Output: policy + value |
+| Encoder / Prior (Stochastic MuZero) | ResNet | Input: observations → Output: latent variable distribution |
+
+The sophistication of AlphaGo Zero, MuZero, and their successors lies not in exotic network architectures but in **what the networks are trained to predict**, **how training data is generated** (self-play, reanalysis), and **how planning (MCTS) interacts with learned functions** to produce behaviour far better than the raw network alone.
